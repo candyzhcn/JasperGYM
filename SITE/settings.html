@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>设置 · 训练提醒</title>
+<style>
+  :root{
+    --bg:#f1f5f9; --panel:#fff; --ink:#0f172a;
+    --brand:#2563eb; --ok:#10b981; --danger:#ef4444;
+  }
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,"PingFang SC","Noto Sans CJK SC","Helvetica Neue",Arial}
+  .wrap{max-width:1100px;margin:0 auto;padding:16px}
+  .nav{position:sticky;top:0;background:#fff;box-shadow:0 1px 0 rgba(0,0,0,.06)}
+  .row{display:flex;gap:16px;flex-wrap:wrap}
+  .card{background:var(--panel);border-radius:16px;box-shadow:0 6px 28px rgba(0,0,0,.06);padding:18px;margin:14px 0}
+  label{font-weight:800;display:block;margin-bottom:8px}
+  input[type="text"],input[type="color"],input[type="number"],input[type="date"],select,textarea{width:100%;border:1px solid #cbd5e1;border-radius:12px;padding:12px 14px;box-sizing:border-box;background:#fff}
+  textarea{min-height:140px;resize:vertical}
+  .btns{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px}
+  .btn{border:0;border-radius:12px;padding:12px 18px;cursor:pointer;font-weight:700}
+  .btn.brand{background:var(--brand);color:#fff}
+  .btn.ok{background:var(--ok);color:#fff}
+  .btn.danger{background:var(--danger);color:#fff}
+  .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid #cbd5e1;border-radius:999px;padding:6px 10px;background:#f8fafc;cursor:pointer}
+  .list{display:flex;flex-direction:column;gap:10px}
+  .item{border:1px solid #e2e8f0;border-radius:12px;padding:12px;background:#fff}
+</style>
+</head>
+<body>
+<div class="nav">
+  <div class="wrap row" style="justify-content:space-between;align-items:center">
+    <div><strong>设置</strong></div>
+    <div class="btns">
+      <a class="pill" href="./index.html">← 返回</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="card">
+    <div class="row">
+      <div class="col" style="flex:1 1 320px">
+        <label>标题</label>
+        <input id="title" type="text" placeholder="例如：Jasper 训练提醒">
+      </div>
+      <div class="col" style="flex:0 0 220px">
+        <label>版本号</label>
+        <input id="version" type="text" placeholder="v3.x">
+      </div>
+      <div class="col" style="flex:0 0 220px">
+        <label>背景色</label>
+        <input id="bg" type="color" value="#91C6FF">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <div class="col" style="flex:0 0 220px">
+        <label>休息间隔（秒）</label>
+        <input id="rest" type="number" min="5" step="5">
+      </div>
+      <div class="col" style="flex:0 0 220px">
+        <label>响铃时长（秒）</label>
+        <input id="bell" type="number" min="1" step="1">
+      </div>
+      <div class="col" style="flex:1 1 320px;display:flex;align-items:flex-end">
+        <button class="btn pill" id="btnTestBell">🔔 试放铃声</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <label>管理部位</label>
+    <div class="row">
+      <div class="col" style="flex:1 1 320px">
+        <select id="partSelect"></select>
+      </div>
+      <div class="col" style="flex:1 1 320px">
+        <input type="text" id="partNewName" placeholder="新增或重命名…">
+      </div>
+    </div>
+    <div class="btns">
+      <button class="btn ok" id="btnAddPart">➕ 新增</button>
+      <button class="btn brand" id="btnRenamePart">✏️ 重命名（选中→新名）</button>
+      <button class="btn danger" id="btnRemovePart">🗑️ 删除（选中）</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <label>该部位的视频管理（下拉列表来源）</label>
+    <div class="row">
+      <div class="col" style="flex:1 1 320px">
+        <select id="videoPart"></select>
+      </div>
+      <div class="col" style="flex:1 1 320px">
+        <input id="videoTitle" type="text" placeholder="自定义标题（可读名称）">
+      </div>
+      <div class="col" style="flex:1 1 320px">
+        <input id="videoURL" type="text" placeholder="https://（YouTube/B站/直链mp4）">
+      </div>
+    </div>
+    <div class="btns">
+      <button class="btn ok" id="btnAddVideo">➕ 添加到该部位</button>
+    </div>
+    <div class="list" id="videoList"></div>
+  </div>
+
+  <div class="card">
+    <label>该部位提示语（固定；训练页调用）</label>
+    <div class="row">
+      <div class="col" style="flex:1 1 320px">
+        <select id="tipPart"></select>
+      </div>
+    </div>
+    <textarea id="taTips" placeholder="胸：肩胛后缩，控制离心&#10;腿：核心收紧，膝盖与脚尖方向一致"></textarea>
+    <div class="btns">
+      <button class="btn ok" id="btnSaveTips">💾 保存该部位提示语</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <label>背景音乐</label>
+    <div class="row">
+      <div class="col" style="flex:1 1 320px">
+        <select id="musicSelect"></select>
+      </div>
+      <div class="col" style="flex:0 0 220px;display:flex;gap:8px;align-items:flex-end">
+        <button class="btn pill" id="btnPlayMusic">▶︎ 播放</button>
+        <button class="btn pill" id="btnPauseMusic">⏸ 暂停</button>
+      </div>
+    </div>
+    <div class="small">优先读取 <code>/music/list.json</code>，没有则需自行选择本地音乐。</div>
+  </div>
+
+  <div class="card">
+    <label>导入 / 导出</label>
+    <div class="btns">
+      <button class="btn ok" id="btnDump">📤 导出全部设置（含日志/计划/提示/视频/部位…）</button>
+      <input type="file" id="fileImport" accept="application/json" style="display:none">
+      <button class="btn brand" id="btnLoad">📥 导入 JSON 并覆盖</button>
+    </div>
+    <div class="btns">
+      <button class="btn danger" id="btnClearAll">🧹 清空本地全部数据</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <button class="btn ok" style="width:100%;font-size:18px" id="btnSaveAll">💾 保存设置（写入本地）</button>
+  </div>
+
+</div>
+
+<script>
+const LSKEY = 'jr_app_state_v3';
+const $ = s=>document.querySelector(s);
+const app = {
+  parts: ['腿','胸','背','肩','核心'],
+  currentPart:'腿',
+  lastByPart:{}, nextByPart:{}, tipsByPart:{},
+  videosByPart:{},
+  settings:{title:'训练提醒',version:'v3.x',bg:'#91C6FF',rest:60,bell:2},
+  logs:[]
+};
+function load(){
+  try{
+    const raw = localStorage.getItem(LSKEY);
+    if(raw){ Object.assign(app, JSON.parse(raw)); }
+  }catch(e){}
+}
+function save(){ localStorage.setItem(LSKEY, JSON.stringify(app)); }
+function toast(m){ alert(m); }
+load();
+
+/* 基本设置 */
+$('#title').value = app.settings?.title || '训练提醒';
+$('#version').value = app.settings?.version || 'v3.x';
+$('#bg').value = app.settings?.bg || '#91C6FF';
+$('#rest').value = app.settings?.rest ?? 60;
+$('#bell').value = app.settings?.bell ?? 2;
+
+/* 部位下拉 */
+function rebuildPartSelect(){
+  const ids=['partSelect','videoPart','tipPart'];
+  ids.forEach(id=>{
+    const sel = $('#'+id); sel.innerHTML = '';
+    app.parts.forEach(p=>{
+      const o=document.createElement('option');o.value=p;o.textContent=p;sel.appendChild(o);
+    });
+    sel.value = app.currentPart;
+  });
+  renderVideoList();
+  $('#taTips').value = app.tipsByPart[$('#tipPart').value] || '';
+}
+rebuildPartSelect();
+
+/* 管理部位 */
+$('#btnAddPart').onclick = ()=>{
+  const name = ($('#partNewName').value||'').trim();
+  if(!name) return toast('请输入名称');
+  if(app.parts.includes(name)) return toast('已存在');
+  app.parts.push(name);
+  app.currentPart = name;
+  $('#partNewName').value = '';
+  save(); rebuildPartSelect(); toast('已添加');
+};
+$('#btnRenamePart').onclick = ()=>{
+  const old = $('#partSelect').value;
+  const name = ($('#partNewName').value||'').trim();
+  if(!name) return toast('新名称为空');
+  const i = app.parts.indexOf(old);
+  if(i<0) return;
+  app.parts[i]=name;
+  // 同步映射的键
+  function renameKey(obj){
+    if(obj[old]!==undefined){ obj[name]=obj[old]; delete obj[old];}
+  }
+  renameKey(app.lastByPart); renameKey(app.nextByPart); renameKey(app.tipsByPart); renameKey(app.videosByPart);
+  if(app.currentPart===old) app.currentPart=name;
+  $('#partNewName').value='';
+  save(); rebuildPartSelect(); toast('已重命名');
+};
+$('#btnRemovePart').onclick = ()=>{
+  const p = $('#partSelect').value;
+  if(!confirm('删除部位「'+p+'」及其相关配置？')) return;
+  app.parts = app.parts.filter(x=>x!==p);
+  delete app.lastByPart[p]; delete app.nextByPart[p]; delete app.tipsByPart[p]; delete app.videosByPart[p];
+  if(app.currentPart===p) app.currentPart = app.parts[0]||'';
+  save(); rebuildPartSelect(); toast('已删除');
+};
+$('#tipPart').onchange = ()=>{ $('#taTips').value = app.tipsByPart[$('#tipPart').value] || ''; };
+$('#btnSaveTips').onclick = ()=>{
+  app.tipsByPart[$('#tipPart').value] = $('#taTips').value.trim();
+  save(); toast('已保存该部位提示语');
+};
+
+/* 视频管理 */
+function renderVideoList(){
+  const box = $('#videoList'); box.innerHTML = '';
+  const part = $('#videoPart').value;
+  const list = app.videosByPart[part] || [];
+  if(list.length===0){ box.innerHTML='<div class="small">该部位暂无视频。</div>'; return; }
+  list.forEach((v,i)=>{
+    const it = document.createElement('div');
+    it.className='item';
+    it.innerHTML=`
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <div><strong>${v.title||'(无标题)'}</strong><div class="small">${v.url}</div></div>
+        <div class="btns">
+          <button class="btn danger btn-del" data-i="${i}">删除</button>
+        </div>
+      </div>
+    `;
+    box.appendChild(it);
+  });
+  box.querySelectorAll('.btn-del').forEach(b=>{
+    b.onclick = ()=>{
+      const i=+b.dataset.i; const p=$('#videoPart').value;
+      app.videosByPart[p].splice(i,1);
+      save(); renderVideoList();
+    };
+  });
+}
+$('#videoPart').onchange = renderVideoList;
+$('#btnAddVideo').onclick = ()=>{
+  const p=$('#videoPart').value;
+  const t=$('#videoTitle').value.trim();
+  const u=$('#videoURL').value.trim();
+  if(!u) return toast('请输入链接');
+  app.videosByPart[p] = app.videosByPart[p]||[];
+  app.videosByPart[p].push({title:t||u,url:u});
+  $('#videoTitle').value=''; $('#videoURL').value='';
+  save(); renderVideoList(); toast('已添加');
+};
+
+/* 背景音乐(简化)：尝试读取 /music/list.json */
+const musicSel = $('#musicSelect');
+let musicPlayer = new Audio();
+async function loadMusicList(){
+  try{
+    const res = await fetch('/music/list.json',{cache:'no-store'});
+    if(!res.ok) throw 0;
+    const arr = await res.json();
+    musicSel.innerHTML='';
+    arr.forEach(n=>{
+      const o=document.createElement('option'); o.value='/music/'+n; o.textContent=n; musicSel.appendChild(o);
+    });
+  }catch(e){
+    musicSel.innerHTML = '<option>本地无列表，请自行选择文件</option>';
+  }
+}
+loadMusicList();
+$('#btnPlayMusic').onclick = ()=>{
+  const v = musicSel.value;
+  if(v && v.startsWith('/')){ musicPlayer.src=v; musicPlayer.loop=true; musicPlayer.play(); }
+  else{ toast('未检测到 /music/list.json，请上传或改为本地实现'); }
+};
+$('#btnPauseMusic').onclick = ()=> musicPlayer.pause();
+
+/* 试放铃声（bell.mp3 或合成音） */
+$('#btnTestBell').onclick = async ()=>{
+  try{
+    const a=new Audio('/bell.mp3'); a.play().catch(async()=>{
+      // 合成音回退
+      const ctx=new (window.AudioContext||window.webkitAudioContext)();
+      const o=ctx.createOscillator(); const g=ctx.createGain();
+      o.type='sine'; o.frequency.value=880; o.connect(g); g.connect(ctx.destination);
+      o.start(); setTimeout(()=>{o.stop();ctx.close();}, 1000);
+    });
+  }catch(e){}
+};
+
+/* 导出/导入/保存全部设置 */
+$('#btnDump').onclick = ()=>{
+  // 把当前表单写入应用对象
+  app.settings.title = $('#title').value.trim() || '训练提醒';
+  app.settings.version = $('#version').value.trim() || 'v3.x';
+  app.settings.bg = $('#bg').value || '#91C6FF';
+  app.settings.rest = +$('#rest').value || 60;
+  app.settings.bell = +$('#bell').value || 2;
+  save();
+  const blob = new Blob([localStorage.getItem(LSKEY)],{type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download='jr-settings-all.json'; a.click();
+  URL.revokeObjectURL(url);
+};
+$('#btnLoad').onclick = ()=> $('#fileImport').click();
+$('#fileImport').onchange = async (e)=>{
+  const f=e.target.files?.[0]; if(!f) return;
+  const txt = await f.text();
+  try{
+    JSON.parse(txt); // 校验
+    localStorage.setItem(LSKEY, txt);
+    toast('导入成功：请刷新页面');
+  }catch(err){ toast('JSON 格式错误'); }
+};
+$('#btnClearAll').onclick = ()=>{
+  if(!confirm('清空本地全部数据？')) return;
+  localStorage.removeItem(LSKEY);
+  toast('已清空。刷新后生效。');
+};
+$('#btnSaveAll').onclick = ()=>{
+  app.settings.title = $('#title').value.trim() || '训练提醒';
+  app.settings.version = $('#version').value.trim() || 'v3.x';
+  app.settings.bg = $('#bg').value || '#91C6FF';
+  app.settings.rest = +$('#rest').value || 60;
+  app.settings.bell = +$('#bell').value || 2;
+  save();
+  toast('全部设置已保存');
+};
+</script>
+</body>
+</html>

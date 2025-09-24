@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>训练提醒</title>
+<link rel="manifest" href="manifest.json">
+<style>
+  :root{
+    --bg:#91C6FF;
+    --panel:#ffffff;
+    --ink:#0f172a;
+    --muted:#e2e8f0;
+    --brand:#2563eb;
+    --ok:#10b981;
+    --danger:#ef4444;
+  }
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,"PingFang SC","Noto Sans CJK SC","Helvetica Neue",Arial}
+  .nav{position:sticky;top:0;z-index:5;background:rgba(255,255,255,.65);backdrop-filter:saturate(180%) blur(8px);box-shadow:0 1px 0 rgba(0,0,0,.05)}
+  .wrap{max-width:1100px;margin:0 auto;padding:16px}
+  .nav .row{display:flex;gap:12px;align-items:center;justify-content:space-between}
+  .title{font-size:22px;font-weight:800}
+  .tabs{display:flex;gap:8px}
+  .tab{border:1px solid #cbd5e1;background:#e2e8f0;border-radius:12px;padding:10px 16px;cursor:pointer}
+  .tab.active{background:#2563eb;color:#fff;border-color:#2563eb}
+  .card{background:var(--panel);border-radius:16px;box-shadow:0 6px 28px rgba(0,0,0,.06);padding:18px;margin:14px 0}
+  .row{display:flex;gap:16px;flex-wrap:wrap}
+  .col{flex:1 1 320px}
+  label{font-weight:800;display:block;margin-bottom:8px}
+  select,input[type="text"],input[type="date"]{width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:12px;padding:12px 14px;background:#fff}
+  textarea{width:100%;min-height:180px;resize:vertical;border:1px solid #cbd5e1;border-radius:14px;padding:12px 14px;box-sizing:border-box;background:#fff}
+  .btns{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px}
+  .btn{border:0;border-radius:12px;padding:12px 18px;cursor:pointer;font-weight:700}
+  .btn.brand{background:var(--brand);color:#fff}
+  .btn.ok{background:var(--ok);color:#fff}
+  .btn.danger{background:var(--danger);color:#fff}
+  .btn.muted{background:#e5e7eb}
+  .list{display:flex;flex-direction:column;gap:10px}
+  .item{border:1px solid #e2e8f0;border-radius:12px;padding:12px;background:#fff}
+  .item .hdr{display:flex;align-items:center;gap:8px;justify-content:space-between}
+  details summary{cursor:pointer;list-style:none}
+  details summary::-webkit-details-marker{display:none}
+  .small{opacity:.7}
+  .toolbar{display:flex;gap:8px;align-items:center}
+  .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid #cbd5e1;border-radius:999px;padding:6px 10px;background:#f8fafc;cursor:pointer}
+</style>
+</head>
+<body>
+
+<!-- 顶部导航 -->
+<div class="nav">
+  <div class="wrap row">
+    <div class="title" id="appTitle">训练提醒</div>
+    <div class="tabs">
+      <div class="tab active" data-view="train">🏠 首页</div>
+      <div class="tab" data-view="logs">🧱 日志</div>
+      <a class="tab" href="./settings.html">⚙️ 设置</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <!-- 训练视图 -->
+  <section id="view-train">
+    <div class="card">
+      <div class="row">
+        <div class="col" style="max-width:360px">
+          <label>训练部位</label>
+          <select id="partSelect"></select>
+          <div class="btns" style="margin-top:10px">
+            <button class="btn muted" id="btnAddPart">➕ 自定义部位…</button>
+            <button class="btn pill" id="btnRandomTip">🎯 弹出该部位提示语</button>
+          </div>
+        </div>
+        <div class="col">
+          <label>可选视频（来自设置页）</label>
+          <select id="videoSelect"></select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <label>本次训练内容（可编辑，手动保存）</label>
+      <textarea id="taThis" placeholder="在此粘贴或编写今天要做的动作、组次、重量等…"></textarea>
+      <div class="btns">
+        <button class="btn ok" id="btnSaveAsLast">✅ 本次完成，保存为“上次”</button>
+        <button class="btn muted" id="btnCopyLast">↩️ 用“上次”复制到“本次”</button>
+        <button class="btn brand" id="btnWriteLog">📝 写入日志（取第一行做标题）</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <label>上次训练记录（只读）</label>
+      <textarea id="taLast" readonly placeholder="该部位上次训练的内容显示在这里，便于对照。"></textarea>
+      <div class="btns">
+        <button class="btn danger" id="btnClearLast">🗑️ 清除上次</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <label>下次训练展望（可编辑，手动保存）</label>
+      <textarea id="taNext" placeholder="下次要做的计划/加重/动作调整等…"></textarea>
+      <div class="btns">
+        <button class="btn ok" id="btnSaveNext">💾 保存展望</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <label>该部位提示语（固定，跟随部位保存/读取）</label>
+      <textarea id="taTips" placeholder="胸：肩胛后缩，控制离心&#10;腿：核心收紧，膝盖与脚尖方向一致&#10;…"></textarea>
+      <div class="btns">
+        <button class="btn ok" id="btnSaveTips">💾 保存提示语（此部位）</button>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- 日志视图 -->
+  <section id="view-logs" style="display:none">
+    <div class="card">
+      <label>新增日志（完整内容；保存时自动取第一行作为标题）</label>
+      <textarea id="taNewLog" placeholder="示例：&#10;9/23 腿臀容量/泵感日总结&#10;&#10;时间：17:00–18:05（≈65分钟）&#10;…"></textarea>
+      <div class="row">
+        <div class="col">
+          <label>日期（YYYY-MM-DD）</label>
+          <input type="date" id="logDate">
+        </div>
+        <div class="col">
+          <label>（可选）直接指定标题（否则自动取第一行）</label>
+          <input type="text" id="logTitle" placeholder="不填则用第一行作为标题">
+        </div>
+      </div>
+      <div class="btns">
+        <button class="btn ok" id="btnAddLog">💾 保存日志</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="row" style="align-items:center">
+        <div class="col"><label>日志列表（正序：旧 → 新）</label></div>
+        <div class="col" style="max-width:320px;text-align:right">
+          <button class="btn pill" id="btnToggleSort">↕️ 切换排序模式：<span id="sortModeLabel">查看</span></button>
+        </div>
+      </div>
+      <div class="list" id="logList"></div>
+    </div>
+  </section>
+</div>
+
+<script>
+/* ---------------- App State ---------------- */
+const LSKEY = 'jr_app_state_v3';
+const nowDate = ()=> new Date().toISOString().slice(0,10);
+const $ = s=>document.querySelector(s);
+const app = {
+  parts: ['腿','胸','背','肩','核心'],
+  currentPart: '腿',
+  lastByPart: {},            // { 部位: '上次文本' }
+  nextByPart: {},            // { 部位: '下次展望' }
+  tipsByPart: {},            // { 部位: '提示语文本' }
+  videosByPart: {},          // { 部位:[{title,url}] } 由设置页写入
+  settings: { title:'训练提醒', version:'v3.x', bg:'#91C6FF', rest:60, bell:2 },
+  logs: [],                  // [{id,date,title,content}]
+};
+
+/* -------------- Load & Save --------------- */
+function load(){
+  try{
+    const raw = localStorage.getItem(LSKEY);
+    if(raw){
+      const s = JSON.parse(raw);
+      Object.assign(app, s);
+    }
+  }catch(e){}
+}
+function save(){ localStorage.setItem(LSKEY, JSON.stringify(app)); }
+
+/* -------------- UI helpers ---------------- */
+function setNavActive(view){
+  document.querySelectorAll('.tab[data-view]').forEach(t=>{
+    t.classList.toggle('active', t.dataset.view === view);
+  });
+  $('#view-train').style.display = view==='train'?'':'none';
+  $('#view-logs').style.display  = view==='logs' ?'':'none';
+}
+
+function toast(msg){
+  alert(msg);
+}
+
+/* -------------- Build Part Select ---------- */
+function rebuildPartSelect(){
+  const sel = $('#partSelect');
+  sel.innerHTML = '';
+  app.parts.forEach(p=>{
+    const opt = document.createElement('option');
+    opt.value = p; opt.textContent = p;
+    sel.appendChild(opt);
+  });
+  sel.value = app.currentPart;
+  // 构建视频下拉
+  rebuildVideoSelect();
+  // 载入对应数据
+  fillForPart(app.currentPart);
+}
+function rebuildVideoSelect(){
+  const sel = $('#videoSelect');
+  sel.innerHTML = '';
+  const list = app.videosByPart[app.currentPart] || [];
+  if(list.length===0){
+    const o = document.createElement('option');
+    o.textContent = '该部位暂无视频（到设置页添加）';
+    sel.appendChild(o);
+    return;
+  }
+  list.forEach(v=>{
+    const o = document.createElement('option');
+    o.value = v.url; o.textContent = v.title||v.url;
+    sel.appendChild(o);
+  });
+}
+
+/* --------------- Fill for Part ------------- */
+function fillForPart(part){
+  $('#taLast').value = app.lastByPart[part] || '';
+  $('#taNext').value = app.nextByPart[part] || '';
+  $('#taTips').value = app.tipsByPart[part] || '';
+}
+
+/* --------------- Logs render --------------- */
+let sortMode = 'view'; // view or sort
+function renderLogs(){
+  $('#sortModeLabel').textContent = sortMode==='view'?'查看':'排序';
+  const box = $('#logList');
+  box.innerHTML = '';
+
+  // 正序（旧到新）
+  const items = [...app.logs].sort((a,b)=> a.date.localeCompare(b.date));
+
+  items.forEach((log,idx)=>{
+    const it = document.createElement('div');
+    it.className = 'item';
+    it.draggable = (sortMode==='sort');
+    it.dataset.id = log.id;
+
+    const hdr = document.createElement('div');
+    hdr.className = 'hdr';
+    hdr.innerHTML = `
+      <div><strong>${log.date}</strong> · ${log.title||'(无标题)'}</div>
+      <div class="toolbar">
+        <button class="pill btnDel" data-id="${log.id}">🗑️ 删除</button>
+      </div>
+    `;
+    it.appendChild(hdr);
+
+    const det = document.createElement('details');
+    const sum = document.createElement('summary');
+    sum.textContent = '展开/收起';
+    det.appendChild(sum);
+    const pre = document.createElement('pre');
+    pre.style.whiteSpace='pre-wrap';
+    pre.textContent = log.content;
+    det.appendChild(pre);
+    it.appendChild(det);
+
+    box.appendChild(it);
+  });
+
+  // 删除
+  box.querySelectorAll('.btnDel').forEach(b=>{
+    b.onclick = ()=>{
+      const id = b.dataset.id;
+      app.logs = app.logs.filter(x=>x.id!==id);
+      save(); renderLogs();
+    };
+  });
+
+  if(sortMode==='sort'){
+    // 简易拖拽排序（正序列表里拖动后，重新写回 logs 序列化顺序）
+    box.querySelectorAll('.item').forEach(el=>{
+      el.addEventListener('dragstart', e=>{
+        e.dataTransfer.setData('id', el.dataset.id);
+      });
+      el.addEventListener('dragover', e=> e.preventDefault());
+      el.addEventListener('drop', e=>{
+        e.preventDefault();
+        const from = e.dataTransfer.getData('id');
+        const to   = el.dataset.id;
+        if(from===to) return;
+        // 以正序数组为基准调整顺序
+        const arr = [...app.logs].sort((a,b)=> a.date.localeCompare(b.date));
+        const fi = arr.findIndex(x=>x.id===from);
+        const ti = arr.findIndex(x=>x.id===to);
+        const [m] = arr.splice(fi,1);
+        arr.splice(ti,0,m);
+        // 覆盖 logs
+        app.logs = arr;
+        save(); renderLogs();
+      });
+    });
+  }
+}
+
+/* --------------- Actions ------------------- */
+function addPart(){
+  const name = prompt('输入新的部位名：');
+  if(!name) return;
+  if(app.parts.includes(name)){ toast('已存在');return; }
+  app.parts.push(name);
+  app.currentPart = name;
+  save(); rebuildPartSelect();
+}
+
+function saveAsLast(){
+  const t = $('#taThis').value.trim();
+  if(!t){ toast('本次内容为空'); return; }
+  app.lastByPart[app.currentPart] = t;
+  save(); fillForPart(app.currentPart);
+  toast('已保存为「上次」。');
+}
+
+function copyLast(){
+  $('#taThis').value = app.lastByPart[app.currentPart] || '';
+  $('#taThis').focus();
+}
+
+function clearLast(){
+  if(!confirm('确认清除此部位的上次记录？')) return;
+  delete app.lastByPart[app.currentPart];
+  save(); fillForPart(app.currentPart);
+}
+
+function saveNext(){
+  app.nextByPart[app.currentPart] = $('#taNext').value.trim();
+  save(); toast('已保存下次展望。');
+}
+function saveTips(){
+  app.tipsByPart[app.currentPart] = $('#taTips').value.trim();
+  save(); toast('已保存该部位提示语。');
+}
+
+function writeLogFromThis(){
+  const content = $('#taThis').value.trim();
+  if(!content){ toast('本次内容为空'); return; }
+  const firstLine = content.split(/\r?\n/)[0] || '(无标题)';
+  const date = nowDate();
+  app.logs.push({id:crypto.randomUUID(), date, title:firstLine, content});
+  save(); renderLogs();
+  toast('已写入日志。');
+}
+
+/* --------------- Logs add ------------------ */
+function addLog(){
+  let content = $('#taNewLog').value.trim();
+  if(!content){ toast('内容为空'); return; }
+  let title = $('#logTitle').value.trim();
+  if(!title){
+    title = (content.split(/\r?\n/)[0]||'(无标题)').trim();
+  }
+  const date = $('#logDate').value || nowDate();
+  app.logs.push({id:crypto.randomUUID(), date, title, content});
+  save(); $('#taNewLog').value=''; $('#logTitle').value=''; $('#logDate').value=nowDate(); renderLogs();
+}
+
+function toggleSort(){
+  sortMode = (sortMode==='view')?'sort':'view';
+  renderLogs();
+}
+
+/* --------------- Tips popup --------------- */
+function popupTip(){
+  const tips = (app.tipsByPart[app.currentPart]||'').split(/\r?\n/).filter(Boolean);
+  if(tips.length===0){ toast('该部位暂无提示语（在训练页底部保存）'); return; }
+  // 按顺序轮播（非随机）：取第一条并旋转
+  const next = tips.shift();
+  tips.push(next);
+  app.tipsByPart[app.currentPart] = tips.join('\n');
+  save();
+  alert('提示：\n' + next);
+}
+
+/* --------------- Boot ---------------------- */
+load();
+document.body.style.background = app.settings?.bg || '#91C6FF';
+$('#appTitle').textContent = `${app.settings?.title||'训练提醒'} ${app.settings?.version||''}`;
+
+document.querySelectorAll('.tab[data-view]').forEach(t=>{
+  t.onclick = ()=>{
+    setNavActive(t.dataset.view);
+  }
+});
+
+$('#btnAddPart').onclick = addPart;
+$('#btnSaveAsLast').onclick = saveAsLast;
+$('#btnCopyLast').onclick = copyLast;
+$('#btnClearLast').onclick = clearLast;
+$('#btnSaveNext').onclick = saveNext;
+$('#btnSaveTips').onclick = saveTips;
+$('#btnWriteLog').onclick = writeLogFromThis;
+
+$('#btnAddLog').onclick = addLog;
+$('#btnToggleSort').onclick = toggleSort;
+$('#btnRandomTip').onclick = popupTip;
+
+$('#partSelect').onchange = e=>{
+  app.currentPart = e.target.value;
+  save(); rebuildVideoSelect(); fillForPart(app.currentPart);
+};
+
+$('#logDate').value = nowDate();
+rebuildPartSelect();
+renderLogs();
+
+/* 读取设置页写入的视频 */
+window.addEventListener('storage', (e)=>{
+  if(e.key===LSKEY){
+    load();
+    rebuildPartSelect();
+    renderLogs();
+  }
+});
+</script>
+</body>
+</html>
