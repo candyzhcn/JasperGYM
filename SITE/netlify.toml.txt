@@ -1,0 +1,9 @@
+[build]
+  publish = "SITE"
+  command = ""
+
+# 单页应用回退（可选，避免未来子路由404）
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
