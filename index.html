@@ -341,7 +341,7 @@ function setActive(page){
   $('page-'+page).classList.remove('hide');
   document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));
   document.querySelector(`.tab[data-page="${page}"]`).classList.add('active');
-  if(page==='work'){ renderWork(true); if(prefs.bgm.auto && prefs.bgm.url) startBgm(); } else stopBgm();
+  if(page==='work'){ renderWork(); if(prefs.bgm.auto && prefs.bgm.url) startBgm(); } else stopBgm();
   if(page==='logs'){ renderLogFilters(); renderLogs(); }
 }
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>setActive(t.dataset.page));
@@ -361,7 +361,7 @@ function choice(p){ const d=document.createElement('div'); d.className='choice';
   d.onclick=()=>{prefs.part=p.id; save(K.prefs,prefs);}; return d; }
 $('btnStart').onclick=()=>setActive('work');
 $('btnManageCustom').onclick=()=>$('customMgr').classList.toggle('hide');
-$('addCustom').addEventListener('click',()=>{ // 修复“添加无反应”
+$('addCustom').addEventListener('click',()=>{ // 修复：添加无反应
   const name=$('newCustomName').value.trim();
   if(!name){toast('请输入名称');return;}
   if((prefs.customParts||[]).includes(name)){toast('已存在该名称');return;}
@@ -467,7 +467,7 @@ function renderLogFilters(){
   sel.onchange=renderLogs;
   const partSel=$('logPart'); partSel.innerHTML=''; allParts().forEach(p=> partSel.appendChild(new Option(p.name,p.id))); partSel.value=prefs.part;
 }
-$('toggleAddLog').onclick=()=>$('addLogBox').classList.toggle('hide'));
+$('toggleAddLog').onclick = () => $('addLogBox').classList.toggle('hide'); /* ← 修复：这里之前多了一个 ) */
 $('addLogCancel').onclick=()=>hide('addLogBox');
 $('addLogSave').onclick=()=>{
   const txt=$('addLogText').value.trim(); if(!txt) return toast('请粘贴日志内容');
@@ -575,7 +575,7 @@ async function tryLoadMusic(){
     try{ const r=await fetch(x,{method:'HEAD'}); if(r.ok){ addOpt(x.replace(/^.*[\\/]/,''), x); } }catch{}
   }
   if(!sel.options.length) addOpt('（未发现站点音频，需上传或提供 music/list.json）','');
-  sel.value=prefs.bgm.url||sel.value;
+  if(prefs.bgm.url) sel.value=prefs.bgm.url;
 }
 $('saveBgm').onclick=()=>{
   const f=$('bgmFile').files[0]; const selVal=$('bgmSelect').value;
