@@ -4,7 +4,7 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <meta name="theme-color" content="#4285F4"/>
-<title>训练提醒 · v3.33</title>
+<title>训练提醒 · v3.34</title>
 
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192-jia-rounded-fix.png" sizes="192x192" type="image/png">
@@ -99,7 +99,7 @@ textarea{min-height:140px;resize:vertical}
   <!-- 顶部 -->
   <div class="header">
     <div class="titlebar">
-      <div class="appTitle" id="appTitle">训练提醒 · v3.33</div>
+      <div class="appTitle" id="appTitle">训练提醒 · v3.34</div>
       <div class="tabs">
         <div class="tab active" data-page="home"><img src="商城.png" class="ico" alt=""><span>首页</span></div>
         <div class="tab" data-page="work"><img src="点赞.png" class="ico" alt=""><span>训练</span></div>
@@ -269,7 +269,7 @@ textarea{min-height:140px;resize:vertical}
       <div class="sectionTitle">外观 / 标识</div>
       <div class="row auto">
         <div class="field"><label>自定义标题</label><input id="titleInput" type="text" placeholder="如：JasperGYM"></div>
-        <div class="field"><label>版本号</label><input id="verInput" type="text" placeholder="如：v3.33"></div>
+        <div class="field"><label>版本号</label><input id="verInput" type="text" placeholder="如：v3.34"></div>
         <div class="field"><label>背景颜色</label><input id="bgColor" type="color" value="#91C6FF"></div>
         <button class="btn ok" id="saveBrand" type="button">保存外观</button>
       </div>
@@ -324,7 +324,7 @@ const K={brand:'gym_brand',prefs:'gym_prefs',videos:'gym_videos',logs:'gym_logs'
 const load=(k,d)=>{try{const t=localStorage.getItem(k);return t?JSON.parse(t):d}catch{return d}}
 const save=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
 
-let brand=load(K.brand,{title:'训练提醒',ver:'v3.33',bg:'#91C6FF'});
+let brand=load(K.brand,{title:'训练提醒',ver:'v3.34',bg:'#91C6FF'});
 let prefs=load(K.prefs,{interval:60,beepLen:2,part:'legs',customParts:[],bgm:{url:'',auto:false}});
 let videos=load(K.videos,{legs:[],chest:[],back:[],arms:[],shoulders:[],core:[]});
 let notes=load(K.notes,{legs:"",chest:"",back:"",arms:"",shoulders:"",core:""});
@@ -351,6 +351,7 @@ function renderHomeChoices(){
   const box=$('homeChoices'); box.innerHTML='';
   baseParts.forEach(p=>box.appendChild(choice(p)));
   (prefs.customParts||[]).forEach(n=>box.appendChild(choice({id:'c_'+encodeURIComponent(n),name:n})));
+  // “自定义”按钮（仅打开管理，不含 + 号）
   const add=document.createElement('div'); add.className='choice';
   add.innerHTML=`<input type="radio" disabled/><span class="name">自定义</span>`;
   add.onclick=()=>{ $('btnManageCustom').click(); $('newCustomName').focus(); };
@@ -361,7 +362,7 @@ function choice(p){ const d=document.createElement('div'); d.className='choice';
   d.onclick=()=>{prefs.part=p.id; save(K.prefs,prefs);}; return d; }
 $('btnStart').onclick=()=>setActive('work');
 $('btnManageCustom').onclick=()=>$('customMgr').classList.toggle('hide');
-$('addCustom').addEventListener('click',()=>{ // 修复：添加无反应
+$('addCustom').addEventListener('click',()=>{ 
   const name=$('newCustomName').value.trim();
   if(!name){toast('请输入名称');return;}
   if((prefs.customParts||[]).includes(name)){toast('已存在该名称');return;}
@@ -455,7 +456,7 @@ function renderWork(){
   $('txtPrev').value=t.prev||''; $('txtCurr').value=t.curr||''; $('txtNext').value=t.next||'';
   refreshVideoUI(prefs.part);
   resetCountdown();
-  sel.onchange=()=>{ prefs.part=sel.value; save(K.prefs,prefs); renderWork(); };
+  sel.onchange=()=>{ prefs.part=sel.value; save(K.prefs,prefs); refreshVideoUI(prefs.part); stopAllVideo(); renderWork(); };
 }
 
 /* ===== 日志 ===== */
@@ -467,7 +468,7 @@ function renderLogFilters(){
   sel.onchange=renderLogs;
   const partSel=$('logPart'); partSel.innerHTML=''; allParts().forEach(p=> partSel.appendChild(new Option(p.name,p.id))); partSel.value=prefs.part;
 }
-$('toggleAddLog').onclick = () => $('addLogBox').classList.toggle('hide'); /* ← 修复：这里之前多了一个 ) */
+$('toggleAddLog').onclick = () => $('addLogBox').classList.toggle('hide');
 $('addLogCancel').onclick=()=>hide('addLogBox');
 $('addLogSave').onclick=()=>{
   const txt=$('addLogText').value.trim(); if(!txt) return toast('请粘贴日志内容');
@@ -564,12 +565,10 @@ const bgm=$('bgmAudio');
 async function tryLoadMusic(){
   const sel=$('bgmSelect'); sel.innerHTML='';
   const addOpt=(label,val)=>sel.appendChild(new Option(label,val));
-  // 1) 尝试 list.json / index.json
   const candidates=['music/list.json','music/index.json'];
   for(const p of candidates){
     try{ const r=await fetch(p,{cache:'no-store'}); if(r.ok){ const arr=await r.json(); if(Array.isArray(arr)&&arr.length){ arr.forEach(x=>addOpt(x.replace(/^.*[\\/]/,''), x)); return; } } }catch{}
   }
-  // 2) 常见文件名兜底
   const common=['music/bgm.mp3','music/bgm.mp4','music/bell.mp3'];
   for(const x of common){
     try{ const r=await fetch(x,{method:'HEAD'}); if(r.ok){ addOpt(x.replace(/^.*[\\/]/,''), x); } }catch{}
