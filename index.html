@@ -4,7 +4,7 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <meta name="theme-color" content="#4285F4"/>
-<title>训练提醒 · v3.34</title>
+<title>训练提醒 · v3.35</title>
 
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192-jia-rounded-fix.png" sizes="192x192" type="image/png">
@@ -76,21 +76,13 @@ textarea{min-height:140px;resize:vertical}
 @media (max-width: 420px){ #videoContainer{height:360px} }
 .notice{margin-top:12px;padding:12px;border:1px dashed #cbd5e1;border-radius:10px;background:#f8fafc;white-space:pre-wrap}
 
-/* 训练记录大对话框 */
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:10000}
-.modal.show{display:flex}
-.modal .panel{background:#fff;width:min(1100px,94vw);max-height:92vh;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px}
-.modal .bar{display:flex;gap:8px;flex-wrap:wrap}
-.modal .bar .seg{border:1px solid var(--border);background:#f8fafc;border-radius:999px;padding:8px 12px;cursor:pointer}
-.modal .bar .active{background:var(--brand);border-color:var(--brand);color:#fff}
-.modal textarea{height:70vh;line-height:1.75}
-
 /* 日志 */
 .filterRow{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
 .toolsRow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
 .log-item{padding:16px 10px;border-bottom:1px solid var(--border);border-radius:8px;margin-bottom:10px}
+.log-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .log-title{font-weight:700;cursor:pointer;margin-bottom:6px}
-.log-tags{font-size:12px;color:#64748b;margin-bottom:6px}
+.log-tags{font-size:12px;color:#64748b;margin-left:auto}
 .log-content{margin-top:6px;white-space:pre-wrap;word-break:break-word;line-height:1.8}
 </style>
 </head>
@@ -99,7 +91,7 @@ textarea{min-height:140px;resize:vertical}
   <!-- 顶部 -->
   <div class="header">
     <div class="titlebar">
-      <div class="appTitle" id="appTitle">训练提醒 · v3.34</div>
+      <div class="appTitle" id="appTitle">训练提醒 · v3.35</div>
       <div class="tabs">
         <div class="tab active" data-page="home"><img src="商城.png" class="ico" alt=""><span>首页</span></div>
         <div class="tab" data-page="work"><img src="点赞.png" class="ico" alt=""><span>训练</span></div>
@@ -154,18 +146,12 @@ textarea{min-height:140px;resize:vertical}
         </div>
       </div>
 
-      <div class="row auto" style="margin-top:8px">
-        <div>
-          <div style="display:flex;gap:8px;align-items:center;justify-content:space-between">
-            <div class="sectionTitle" style="margin:0">训练记录</div>
-            <button class="btn light" id="openTrainDlg" type="button">✏️ 大窗口编辑</button>
-          </div>
-          <div class="row auto">
-            <div><label>上次训练</label><textarea id="txtPrev"></textarea></div>
-            <div><label>本次训练</label><textarea id="txtCurr"></textarea></div>
-            <div><label>下次展望</label><textarea id="txtNext"></textarea></div>
-          </div>
+      <!-- 训练记录：单一大窗口（替代 3 个窗口） -->
+      <div class="card" style="margin-top:10px">
+        <div style="display:flex;gap:8px;align-items:center;justify-content:space-between">
+          <div class="sectionTitle" style="margin:0">训练记录（大窗口）</div>
         </div>
+        <textarea id="txtAll" class="bigtext" placeholder="在这里一次性记录：上次训练要点 / 本次训练内容 / 下次展望… 一行一条更清晰"></textarea>
       </div>
     </div>
 
@@ -199,14 +185,16 @@ textarea{min-height:140px;resize:vertical}
         <button class="btn light" id="toggleSort" type="button">✏️ 编辑/排序</button>
       </div>
 
-      <div id="addLogBox" class="hide card" style="margin-top:0">
+      <!-- 新增/编辑 共用大面板（不再用 alert/prompt 对话框） -->
+      <div id="addEditBox" class="hide card" style="margin-top:0">
         <div class="row auto">
           <div class="field"><label>部位</label><select id="logPart"></select></div>
-          <div class="field" style="grid-column:1/-1"><label>日志内容</label><textarea id="addLogText" class="bigtext" placeholder="第一行将作为标题，以下为正文（支持多段落）"></textarea></div>
+          <div class="field"><label>标题</label><input id="editTitle" type="text" placeholder="第一行会作为标题，可在此重写"></div>
+          <div class="field" style="grid-column:1/-1"><label>日志内容</label><textarea id="editContent" class="bigtext" placeholder="正文（支持多段落）"></textarea></div>
         </div>
         <div class="row auto">
-          <button class="btn ok" id="addLogSave" type="button">保存日志</button>
-          <button class="btn light" id="addLogCancel" type="button">取消</button>
+          <button class="btn ok" id="saveLog" type="button">保存</button>
+          <button class="btn light" id="cancelEdit" type="button">取消</button>
         </div>
       </div>
 
@@ -269,7 +257,7 @@ textarea{min-height:140px;resize:vertical}
       <div class="sectionTitle">外观 / 标识</div>
       <div class="row auto">
         <div class="field"><label>自定义标题</label><input id="titleInput" type="text" placeholder="如：JasperGYM"></div>
-        <div class="field"><label>版本号</label><input id="verInput" type="text" placeholder="如：v3.34"></div>
+        <div class="field"><label>版本号</label><input id="verInput" type="text" placeholder="如：v3.35"></div>
         <div class="field"><label>背景颜色</label><input id="bgColor" type="color" value="#91C6FF"></div>
         <button class="btn ok" id="saveBrand" type="button">保存外观</button>
       </div>
@@ -288,22 +276,6 @@ textarea{min-height:140px;resize:vertical}
   </div>
 </div>
 
-<!-- 训练记录大对话框 -->
-<div id="trainDlg" class="modal">
-  <div class="panel">
-    <div class="bar">
-      <div class="seg active" data-k="prev">上次训练</div>
-      <div class="seg" data-k="curr">本次训练</div>
-      <div class="seg" data-k="next">下次展望</div>
-    </div>
-    <textarea id="trainDlgText" placeholder="在这里大面积编辑…"></textarea>
-    <div style="display:flex;gap:10px;justify-content:flex-end">
-      <button class="btn light" id="closeDlg" type="button">取消</button>
-      <button class="btn ok" id="saveDlg" type="button">保存</button>
-    </div>
-  </div>
-</div>
-
 <div id="toast" class="toast hide"></div>
 <audio id="beepAudio" src="bell.mp3" preload="auto"></audio>
 <audio id="bgmAudio" preload="auto" loop></audio>
@@ -313,27 +285,35 @@ textarea{min-height:140px;resize:vertical}
 const $=id=>document.getElementById(id);
 const show=id=>$(id).classList.remove('hide');
 const hide=id=>$(id).classList.add('hide');
-function toast(msg){const t=$('toast');t.textContent=msg;t.classList.remove('hide');t.style.opacity=1;setTimeout(()=>t.style.opacity=0,1600);setTimeout(()=>t.classList.add('hide'),1900);}
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.remove('hide');t.style.opacity=1;setTimeout(()=>t.style.opacity=0,1600);setTimeout(()=>t.classList.add('hide'),1900);} 
 const deb=(fn,ms=300)=>{let h=null;return(...a)=>{clearTimeout(h);h=setTimeout(()=>fn(...a),ms)}}
 const fmt=(s)=>`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
 
 /* ===== 存储键 ===== */
 const K={brand:'gym_brand',prefs:'gym_prefs',videos:'gym_videos',logs:'gym_logs',notes:'gym_notes',trainText:'gym_traintext'};
 
-/* ===== 数据 ===== */
-const load=(k,d)=>{try{const t=localStorage.getItem(k);return t?JSON.parse(t):d}catch{return d}}
-const save=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+/* ===== 存储（兼容 iOS 私密模式） ===== */
+let LS_OK=true; try{localStorage.setItem('__t','1'); localStorage.removeItem('__t');}catch(e){LS_OK=false;}
+const MEM={};
+const load=(k,d)=>{try{const t=(LS_OK?localStorage.getItem(k):MEM[k]);return t?JSON.parse(t):d}catch{return d}}
+const save=(k,v)=>{try{LS_OK?localStorage.setItem(k,JSON.stringify(v)):MEM[k]=JSON.stringify(v);}catch(e){toast('⚠️ 浏览器已禁止/写满本地存储，数据暂存到内存（更换页面将丢失）');}}
 
-let brand=load(K.brand,{title:'训练提醒',ver:'v3.34',bg:'#91C6FF'});
+/* ===== 数据 ===== */
+let brand=load(K.brand,{title:'训练提醒',ver:'v3.35',bg:'#91C6FF'});
 let prefs=load(K.prefs,{interval:60,beepLen:2,part:'legs',customParts:[],bgm:{url:'',auto:false}});
 let videos=load(K.videos,{legs:[],chest:[],back:[],arms:[],shoulders:[],core:[]});
 let notes=load(K.notes,{legs:"",chest:"",back:"",arms:"",shoulders:"",core:""});
-let trainText=load(K.trainText,{});
+let trainText=load(K.trainText,{}); // 单字段 all（向后兼容 prev/curr/next）
 let logs=load(K.logs,[]);
 const baseParts=[{id:'legs',name:'腿部'},{id:'chest',name:'胸部'},{id:'back',name:'背部'},{id:'arms',name:'手臂'},{id:'shoulders',name:'肩部'},{id:'core',name:'核心'}];
 const allParts=()=>[...baseParts, ...(prefs.customParts||[]).map(n=>({id:'c_'+encodeURIComponent(n),name:n}))];
 const partName=id=> (allParts().find(p=>p.id===id)||{name:'未命名'}).name;
-const ensureBucket=id=>{ if(!videos[id]) videos[id]=[]; if(!notes[id]) notes[id]=''; if(!trainText[id]) trainText[id]={prev:'',curr:'',next:''}; };
+const ensureBucket=id=>{ if(!videos[id]) videos[id]=[]; if(!notes[id]) notes[id]=''; if(!trainText[id]) trainText[id]={all:''}; const t=trainText[id]; if(!('all' in t) && (t.prev!==undefined || t.curr!==undefined || t.next!==undefined)){ const parts=[t.prev?'【上次】
+'+t.prev.trim():'', t.curr?'【本次】
+'+t.curr.trim():'', t.next?'【下次】
+'+t.next.trim():''].filter(Boolean); trainText[id]={all:parts.join('
+
+')}; save(K.trainText,trainText); }};
 
 /* ===== 导航 ===== */
 function setActive(page){
@@ -341,17 +321,16 @@ function setActive(page){
   $('page-'+page).classList.remove('hide');
   document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));
   document.querySelector(`.tab[data-page="${page}"]`).classList.add('active');
-  if(page==='work'){ renderWork(); if(prefs.bgm.auto && prefs.bgm.url) startBgm(); } else stopBgm();
+  if(page==='work'){ renderWork(); if(prefs.bgm.auto) startBgm(); } else stopBgm();
   if(page==='logs'){ renderLogFilters(); renderLogs(); }
 }
-document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>setActive(t.dataset.page));
+Array.from(document.querySelectorAll('.tab')).forEach(t=>t.onclick=()=>setActive(t.dataset.page));
 
 /* ===== 首页 ===== */
 function renderHomeChoices(){
   const box=$('homeChoices'); box.innerHTML='';
   baseParts.forEach(p=>box.appendChild(choice(p)));
   (prefs.customParts||[]).forEach(n=>box.appendChild(choice({id:'c_'+encodeURIComponent(n),name:n})));
-  // “自定义”按钮（仅打开管理，不含 + 号）
   const add=document.createElement('div'); add.className='choice';
   add.innerHTML=`<input type="radio" disabled/><span class="name">自定义</span>`;
   add.onclick=()=>{ $('btnManageCustom').click(); $('newCustomName').focus(); };
@@ -362,11 +341,11 @@ function choice(p){ const d=document.createElement('div'); d.className='choice';
   d.onclick=()=>{prefs.part=p.id; save(K.prefs,prefs);}; return d; }
 $('btnStart').onclick=()=>setActive('work');
 $('btnManageCustom').onclick=()=>$('customMgr').classList.toggle('hide');
-$('addCustom').addEventListener('click',()=>{ 
+$('addCustom').addEventListener('click',()=>{
   const name=$('newCustomName').value.trim();
   if(!name){toast('请输入名称');return;}
   if((prefs.customParts||[]).includes(name)){toast('已存在该名称');return;}
-  prefs.customParts.push(name); save(K.prefs,prefs);
+  (prefs.customParts=prefs.customParts||[]).push(name); save(K.prefs,prefs);
   $('newCustomName').value='';
   const id='c_'+encodeURIComponent(name); ensureBucket(id); save(K.videos,videos); save(K.notes,notes); save(K.trainText,trainText);
   renderHomeChoices(); renderCustomList(); renderVmPartOptions(); toast('已添加');
@@ -383,7 +362,7 @@ function renderCustomList(){
       const nn=prompt('重命名为：', name); if(!nn||!nn.trim())return;
       if(prefs.customParts.includes(nn.trim())) return toast('该名称已存在');
       const newId='c_'+encodeURIComponent(nn.trim());
-      videos[newId]=videos[id]||[]; notes[newId]=notes[id]||''; trainText[newId]=trainText[id]||{prev:'',curr:'',next:''};
+      videos[newId]=videos[id]||[]; notes[newId]=notes[id]||''; trainText[newId]=trainText[id]||{all:''};
       delete videos[id]; delete notes[id]; delete trainText[id];
       prefs.customParts[idx]=nn.trim(); if(prefs.part===id) prefs.part=newId;
       save(K.videos,videos); save(K.notes,notes); save(K.trainText,trainText); save(K.prefs,prefs);
@@ -400,30 +379,18 @@ function renderCustomList(){
   });
 }
 
-/* ===== 训练：文本/大对话框/计时/视频 ===== */
+/* ===== 训练：文本/计时/视频 ===== */
 let timerId=null, remain=0;
-function startCountdown(){ stopCountdown(); remain=parseInt(prefs.interval||60,10); $('timer').textContent=fmt(remain); tick(); timerId=setInterval(tick,1000);}
+function startCountdown(){ stopCountdown(); remain=parseInt(prefs.interval||60,10); $('timer').textContent=fmt(remain); tick(); timerId=setInterval(tick,1000);} 
 function tick(){ if(remain<=0){ stopCountdown(); beep(); return; } $('timer').textContent=fmt(remain--); }
 function stopCountdown(){ if(timerId){clearInterval(timerId);timerId=null;} }
 function resetCountdown(){ stopCountdown(); remain=parseInt(prefs.interval||60,10); $('timer').textContent=fmt(remain); }
 function beep(){ try{const a=$('beepAudio'); a.currentTime=0; a.play(); setTimeout(()=>a.pause(), (prefs.beepLen||2)*1000);}catch(e){} }
 $('btnStartTimer').onclick=startCountdown; $('btnStopTimer').onclick=stopCountdown; $('btnResetTimer').onclick=resetCountdown;
 
-const syncTrainText=deb(()=>{
-  const id=prefs.part; ensureBucket(id);
-  trainText[id]={prev:$('txtPrev').value,curr:$('txtCurr').value,next:$('txtNext').value};
-  save(K.trainText,trainText);
-},300);
-['txtPrev','txtCurr','txtNext'].forEach(id=>$(id).addEventListener('input',syncTrainText));
-
-/* 大对话框 */
-let dlgKey='prev';
-$('openTrainDlg').onclick=()=>{ const dlg=$('trainDlg'); dlg.classList.add('show'); setDlgKey('prev'); fillDlg(); };
-$('closeDlg').onclick=()=>$('trainDlg').classList.remove('show');
-$('saveDlg').onclick=()=>{ const t=$('trainDlgText').value; const id=prefs.part; ensureBucket(id); const obj=trainText[id]||{prev:'',curr:'',next:''}; obj[dlgKey]=t; trainText[id]=obj; save(K.trainText,trainText); $('txtPrev').value=obj.prev; $('txtCurr').value=obj.curr; $('txtNext').value=obj.next; $('trainDlg').classList.remove('show'); toast('已保存'); };
-Array.from(document.querySelectorAll('#trainDlg .seg')).forEach(b=>b.onclick=()=>{ setDlgKey(b.dataset.k); fillDlg(); });
-function setDlgKey(k){ dlgKey=k; document.querySelectorAll('#trainDlg .seg').forEach(x=>x.classList.toggle('active',x.dataset.k===k)); }
-function fillDlg(){ const id=prefs.part; ensureBucket(id); const obj=trainText[id]||{prev:'',curr:'',next:''}; $('trainDlgText').value=obj[dlgKey]||''; }
+/* 单一大窗口记录 */
+const syncAll=deb(()=>{ const id=prefs.part; ensureBucket(id); trainText[id]={all:$('txtAll').value||''}; save(K.trainText,trainText); },300);
+$('txtAll').addEventListener('input',syncAll);
 
 /* 视频 */
 function toYT(u){try{const x=new URL(u); if(x.hostname.includes('youtube.com')&&x.searchParams.get('v'))return`https://www.youtube.com/embed/${x.searchParams.get('v')}`; if(x.hostname.includes('youtu.be'))return`https://www.youtube.com/embed/${x.pathname.replace('/','')}`;}catch{} return null;}
@@ -442,7 +409,7 @@ function refreshVideoUI(partId){
   const vs=$('videoSelect'); vs.innerHTML='';
   const arr=videos[partId]||[];
   if(!arr.length){ const o=document.createElement('option'); o.value=''; o.textContent='无视频'; vs.appendChild(o); previewVideo(''); }
-  else{ arr.forEach((it,idx)=>{ const o=document.createElement('option'); o.value=idx; o.textContent=it.name; vs.appendChild(o);}); vs.value=0; previewVideo(arr[0].url);}
+  else{ arr.forEach((it,idx)=>{ const o=document.createElement('option'); o.value=idx; o.textContent=it.name; vs.appendChild(o);}); vs.value=0; previewVideo(arr[0].url);} 
   vs.onchange=()=>{ const i=vs.value; if(i===''||i==null){previewVideo('');return;} previewVideo((videos[partId]||[])[i].url); };
   $('openVideo').onclick=()=>{ const i=vs.value; if(i===''||i==null){toast('该部位暂无视频');return;} window.open((videos[partId]||[])[i].url,'_blank'); };
   $('partNotice').textContent=notes[partId]||'暂无注意事项';
@@ -452,15 +419,14 @@ function renderWork(){
   allParts().forEach(p=> sel.appendChild(new Option(p.name,p.id)) );
   sel.value=prefs.part;
   ensureBucket(prefs.part);
-  const t=trainText[prefs.part]||{prev:'',curr:'',next:''};
-  $('txtPrev').value=t.prev||''; $('txtCurr').value=t.curr||''; $('txtNext').value=t.next||'';
+  $('txtAll').value=(trainText[prefs.part]||{all:''}).all||'';
   refreshVideoUI(prefs.part);
   resetCountdown();
-  sel.onchange=()=>{ prefs.part=sel.value; save(K.prefs,prefs); refreshVideoUI(prefs.part); stopAllVideo(); renderWork(); };
+  sel.onchange=()=>{ prefs.part=sel.value; save(K.prefs,prefs); refreshVideoUI(prefs.part); stopAllVideo(); $('txtAll').value=(trainText[prefs.part]||{all:''}).all||''; };
 }
 
 /* ===== 日志 ===== */
-let sortMode=false;
+let sortMode=false; let editingIndex=null;
 function renderLogFilters(){
   const sel=$('logFilter'); sel.innerHTML='';
   sel.appendChild(new Option('全部','all'));
@@ -468,13 +434,16 @@ function renderLogFilters(){
   sel.onchange=renderLogs;
   const partSel=$('logPart'); partSel.innerHTML=''; allParts().forEach(p=> partSel.appendChild(new Option(p.name,p.id))); partSel.value=prefs.part;
 }
-$('toggleAddLog').onclick = () => $('addLogBox').classList.toggle('hide');
-$('addLogCancel').onclick=()=>hide('addLogBox');
-$('addLogSave').onclick=()=>{
-  const txt=$('addLogText').value.trim(); if(!txt) return toast('请粘贴日志内容');
-  const pid=$('logPart').value; const title=(txt.split(/\r?\n/)[0]||'').trim()||'（无标题）';
-  logs.push({title,content:txt,part:pid,ts:Date.now()}); save(K.logs,logs);
-  $('addLogText').value=''; hide('addLogBox'); renderLogs(); toast('已保存');
+$('toggleAddLog').onclick = () => { editingIndex=null; $('editTitle').value=''; $('editContent').value=''; $('logPart').value=prefs.part; $('addEditBox').classList.toggle('hide'); };
+$('cancelEdit').onclick=()=>hide('addEditBox');
+$('saveLog').onclick=()=>{
+  const title=($('editTitle').value||'').trim();
+  const content=($('editContent').value||'').trim();
+  if(!title && !content){ return toast('请至少填写标题或正文'); }
+  const pid=$('logPart').value; const finalTitle=title || (content.split(/\r?\n/)[0]||'（无标题）');
+  if(editingIndex===null){ logs.push({title:finalTitle,content,part:pid,ts:Date.now()}); }
+  else { logs[editingIndex]={...logs[editingIndex],title:finalTitle,content,part:pid}; }
+  save(K.logs,logs); hide('addEditBox'); renderLogs(); toast('已保存');
 };
 $('toggleSort').onclick=()=>{ sortMode=!sortMode; renderLogs(); };
 
@@ -487,18 +456,20 @@ function renderLogs(){
   if(!list.length){ box.innerHTML='<div class="tiny muted">暂无日志。</div>'; return; }
   list.forEach((log,i)=>{
     const item=document.createElement('div'); item.className='log-item';
+    const head=document.createElement('div'); head.className='log-head';
     const title=document.createElement('div'); title.className='log-title'; title.textContent=log.title||'（无标题）';
     const tags=document.createElement('div'); tags.className='log-tags'; tags.textContent=partName(log.part||'');
+    head.appendChild(title); head.appendChild(tags); item.appendChild(head);
     const content=document.createElement('div'); content.className='log-content hide'; content.textContent=log.content||'（无内容）';
     title.onclick=()=>content.classList.toggle('hide');
-    item.appendChild(title); item.appendChild(tags); item.appendChild(content);
+    item.appendChild(content);
     if(sortMode){
       const tools=document.createElement('div'); tools.className='toolsRow';
       tools.innerHTML=`<button class="btn xs light">⬆️ 上移</button><button class="btn xs light">⬇️ 下移</button><button class="btn xs light">✏️ 编辑</button><button class="btn xs danger">🗑 删除</button>`;
       const [upBtn,downBtn,editBtn,delBtn]=tools.querySelectorAll('button');
       upBtn.onclick=(e)=>{e.stopPropagation(); if(i>0){[logs[i-1],logs[i]]=[logs[i],logs[i-1]]; save(K.logs,logs); renderLogs();}};
       downBtn.onclick=(e)=>{e.stopPropagation(); if(i<logs.length-1){[logs[i+1],logs[i]]=[logs[i],logs[i+1]]; save(K.logs,logs); renderLogs();}};
-      editBtn.onclick=(e)=>{e.stopPropagation(); const nt=prompt('修改标题',log.title||''); if(nt===null)return; const nc=prompt('修改内容',log.content||''); if(nc===null)return; logs[i]={...logs[i],title:nt,content:nc}; save(K.logs,logs); renderLogs();};
+      editBtn.onclick=(e)=>{e.stopPropagation(); editingIndex=i; show('addEditBox'); $('logPart').value=log.part||prefs.part; $('editTitle').value=log.title||''; $('editContent').value=log.content||''; window.scrollTo({top:0,behavior:'smooth'}); };
       delBtn.onclick=(e)=>{e.stopPropagation(); logs.splice(i,1); save(K.logs,logs); renderLogs(); };
       item.appendChild(tools);
     }
@@ -557,21 +528,21 @@ $('saveBrand').onclick=()=>{
 $('exportAll').onclick=()=>{ const payload={brand,prefs,videos,logs,notes,trainText}; const a=document.createElement('a'); a.href='data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(payload,null,2)); a.download='jaspergym-data.json'; a.click(); };
 $('importAll').onclick=()=>$('importFile').click();
 $('importFile').onchange=e=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ try{ const o=JSON.parse(r.result); if(o.brand)brand=o.brand; if(o.prefs)prefs=o.prefs; if(o.videos)videos=o.videos; if(o.logs)logs=o.logs; if(o.notes)notes=o.notes; if(o.trainText)trainText=o.trainText; save(K.brand,brand); save(K.prefs,prefs); save(K.videos,videos); save(K.logs,logs); save(K.notes,notes); save(K.trainText,trainText); $('appTitle').textContent=`${brand.title} · ${brand.ver}`; document.documentElement.style.setProperty('--bg', brand.bg); renderHomeChoices(); renderCustomList(); renderWork(); renderVmPartOptions(); renderLogFilters(); renderLogs(); toast('导入完成'); }catch{ toast('导入失败：JSON 有误'); } }; r.readAsText(f,'utf-8'); };
-$('wipeAll').onclick=()=>{ Object.values(K).forEach(k=>localStorage.removeItem(k)); toast('已清空，刷新中…'); setTimeout(()=>location.reload(),300); };
+$('wipeAll').onclick=()=>{ Object.values(K).forEach(k=>LS_OK?localStorage.removeItem(k):delete MEM[k]); toast('已清空，刷新中…'); setTimeout(()=>location.reload(),300); };
 $('saveTimerPref').onclick=()=>{ prefs.interval=parseInt($('intervalInput').value||60,10); prefs.beepLen=parseInt($('beepLen').value||2,10); save(K.prefs,prefs); resetCountdown(); toast('计时设置已保存'); };
 
 /* 背景音乐（优先 /music） */
-const bgm=$('bgmAudio');
+const bgm=$('bgmAudio'); bgm.crossOrigin='anonymous';
 async function tryLoadMusic(){
   const sel=$('bgmSelect'); sel.innerHTML='';
   const addOpt=(label,val)=>sel.appendChild(new Option(label,val));
   const candidates=['music/list.json','music/index.json'];
   for(const p of candidates){
-    try{ const r=await fetch(p,{cache:'no-store'}); if(r.ok){ const arr=await r.json(); if(Array.isArray(arr)&&arr.length){ arr.forEach(x=>addOpt(x.replace(/^.*[\\/]/,''), x)); return; } } }catch{}
+    try{ const r=await fetch(p,{cache:'no-store'}); if(r.ok){ const arr=await r.json(); if(Array.isArray(arr)&&arr.length){ arr.forEach(x=>addOpt(x.replace(/^.*[\\\/]/,''), x)); break; } } }catch{}
   }
-  const common=['music/bgm.mp3','music/bgm.mp4','music/bell.mp3'];
-  for(const x of common){
-    try{ const r=await fetch(x,{method:'HEAD'}); if(r.ok){ addOpt(x.replace(/^.*[\\/]/,''), x); } }catch{}
+  if(!sel.options.length){
+    const common=['music/bgm.mp3','music/bgm.mp4','music/bell.mp3'];
+    for(const x of common){ try{ const r=await fetch(x,{method:'HEAD'}); if(r.ok){ addOpt(x.replace(/^.*[\\\/]/,''), x); } }catch{} }
   }
   if(!sel.options.length) addOpt('（未发现站点音频，需上传或提供 music/list.json）','');
   if(prefs.bgm.url) sel.value=prefs.bgm.url;
@@ -581,10 +552,14 @@ $('saveBgm').onclick=()=>{
   if(f){ const url=URL.createObjectURL(f); prefs.bgm.url=url; }
   else { prefs.bgm.url=selVal||''; }
   prefs.bgm.auto=$('bgmAuto').value==='1'; save(K.prefs,prefs);
-  toast(prefs.bgm.url?'背景音乐已启用':'已关闭背景音乐');
+  if(prefs.bgm.url){ startBgm(true); toast('背景音乐已启用'); } else { stopBgm(); toast('已关闭背景音乐'); }
 };
-$('testBgm').onclick=()=>{ if(bgm.paused){ startBgm(); } else { stopBgm(); } };
-function startBgm(){ if(!prefs.bgm.url) return; bgm.src=prefs.bgm.url; bgm.play().catch(()=>{}); }
+$('testBgm').onclick=()=>{ if(bgm.paused){ startBgm(true); } else { stopBgm(); } };
+function startBgm(fromUser){
+  const selVal=$('bgmSelect').value; if(!prefs.bgm.url && selVal) { prefs.bgm.url=selVal; save(K.prefs,prefs); }
+  if(!prefs.bgm.url){ toast('请先在下拉选择或上传音频'); return; }
+  bgm.src=prefs.bgm.url; bgm.currentTime=0; const p=bgm.play(); if(p && typeof p.then==='function'){ p.then(()=>{ if(fromUser) toast('▶︎ 正在播放'); }).catch(err=>toast('无法播放：'+(err&&err.message||'权限限制'))); }
+}
 function stopBgm(){ try{bgm.pause();}catch(e){} }
 
 /* ===== 启动 ===== */
